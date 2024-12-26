@@ -3,16 +3,21 @@ import numpy as np
 from pydantic import BaseModel
 
 from typing import List
+import logging
 
 model_size = "small"
 
-class Segment(BaseModel):
+logger = logging.getLogger('uvicorn.error')
+
+class Segment():
     text: str
     start: float
     end: float
 
     def __init__(self, text: str, start: float, end: float) -> None:
-        super().__init__(text=text, start=start, end=end)
+        self.text = text
+        self.start = start
+        self.end = end
 
 # Run on GPU with FP16
 # model = WhisperModel(model_size, device="cuda", compute_type="float16")
@@ -22,11 +27,8 @@ class Segment(BaseModel):
 # or run on CPU with INT8
 model = WhisperModel(model_size, device="cpu", compute_type="int8")
 
-def format_segments(segments) -> List[Segment]:
-    return [Segment(segment.text, segment.start, segment.end) for segment in segments]
-
 def transcribe(audio: np.ndarray) -> List[Segment]:
     segments, info = model.transcribe(audio, beam_size=5)
-    print("Detected language '%s' with probability %f" % (info.language, info.language_probability))
+    logger.info("[TRANSCRIBE] Detected language '%s' with probability %f" % (info.language, info.language_probability))
 
-    return format_segments(segments)
+    return segments
